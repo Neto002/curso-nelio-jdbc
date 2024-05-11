@@ -18,5 +18,8 @@ public class Main {
 
         System.out.println("\nTEST 2: seller findByDepartment");
         sellerDao.findByDepartment(new Department(4, null)).forEach(System.out::println);
+
+        System.out.println("\nTEST 3: seller findAll");
+        sellerDao.findAll().forEach(System.out::println);
     }
 }

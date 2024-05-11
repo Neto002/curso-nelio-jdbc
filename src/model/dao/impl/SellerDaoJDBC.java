@@ -91,8 +91,26 @@ public class SellerDaoJDBC implements SellerDao {
     }
 
     @Override
-    public List<Seller> findAll(Integer id) {
-        return List.of();
+    public List<Seller> findAll() {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+
+        try {
+            st = conn.prepareStatement("SELECT seller.*, department.Name as DepName " +
+                    "FROM seller INNER JOIN department " +
+                    "ON seller.DepartmentId = department.Id " +
+                    "ORDER BY Name");
+
+            rs = st.executeQuery();
+
+            return instantiateSellersList(rs);
+
+        } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        } finally {
+            DB.closeStatement(st);
+            DB.closeResultSet(rs);
+        }
     }
 
     @Override
@@ -110,22 +128,7 @@ public class SellerDaoJDBC implements SellerDao {
             st.setInt(1, department.getId());
             rs = st.executeQuery();
 
-            List<Seller> sellers = new ArrayList<>();
-            Map<Integer, Department> map = new HashMap<>();
-
-            while (rs.next()) {
-                Department dep = map.get(rs.getInt("DepartmentId"));
-
-                if (dep == null) {
-                    dep = instantiateDepartment(rs);
-                    map.put(rs.getInt("DepartmentId"), dep);
-                }
-
-                Seller seller = instantiateSeller(rs, dep);
-                sellers.add(seller);
-            }
-
-            return sellers;
+            return instantiateSellersList(rs);
 
         } catch (SQLException e) {
             throw new DbException(e.getMessage());
@@ -133,5 +136,23 @@ public class SellerDaoJDBC implements SellerDao {
             DB.closeStatement(st);
             DB.closeResultSet(rs);
         }
+    }
+
+    private static List<Seller> instantiateSellersList(ResultSet rs) throws SQLException {
+        List<Seller> sellers = new ArrayList<>();
+        Map<Integer, Department> map = new HashMap<>();
+
+        while (rs.next()) {
+            Department dep = map.get(rs.getInt("DepartmentId"));
+
+            if (dep == null) {
+                dep = instantiateDepartment(rs);
+                map.put(rs.getInt("DepartmentId"), dep);
+            }
+
+            Seller seller = instantiateSeller(rs, dep);
+            sellers.add(seller);
+        }
+        return sellers;
     }
 }
